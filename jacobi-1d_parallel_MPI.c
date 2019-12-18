@@ -78,7 +78,8 @@ void kernel_jacobi_1d(int tsteps,
 
 
     {
-        float C[n];
+        int len = n / (nProcs - 1) + 1;
+        float C[len];
         for (t = 0; t < tsteps; t++) {
             if (id != 0) {
                 int j = 0;
@@ -86,14 +87,14 @@ void kernel_jacobi_1d(int tsteps,
                     C[j] = 0.33333 * (A[i-1] + A[i] + A[i + 1]);
                     j++;
                 }
-                MPI_Send(C, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
+                MPI_Send(C, len, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
                 MPI_Recv(B, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             } else {
                 int k = 0;
                 for (k = 1; k < nProcs; k++) {
-                    MPI_Recv(C, n, MPI_FLOAT, k, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    MPI_Recv(C, len, MPI_FLOAT, k, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                     int j = 0;
-                    for (i = 1 + (id - 1); i < n - 1; i += (nProcs - 1)) {
+                    for (i = 1 + (k - 1); i < n - 1; i += (nProcs - 1)) {
                         B[i] = C[j];
                         j++;
                     }
@@ -109,16 +110,16 @@ void kernel_jacobi_1d(int tsteps,
                     C[j] = 0.33333 * (B[i-1] + B[i] + B[i + 1]);
                     j++;
                 }
-                MPI_Send(C, n, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
+                MPI_Send(C, len, MPI_FLOAT, 0, 0, MPI_COMM_WORLD);
             } else {
                 int k;
                 for (k = 1; k < nProcs; k++) {
-                     MPI_Recv(C, n, MPI_FLOAT, k, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                     int j = 0;
-                     for (i = 1 + (k - 1); i < n - 1; i += (nProcs - 1)) {
-                         A[i] = C[j];
-                         j++;
-                     }
+                    MPI_Recv(C, len, MPI_FLOAT, k, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    int j = 0;
+                    for (i = 1 + (k - 1); i < n - 1; i += (nProcs - 1)) {
+                        A[i] = C[j];
+                        j++;
+                    }
                  }
             }
         }
@@ -138,7 +139,7 @@ int main(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &nProcs);
     MPI_Comm_rank(MPI_COMM_WORLD, &id);
     
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 9; i++) {
         MPI_Barrier(MPI_COMM_WORLD);
         n = nes[i];
         tsteps = tstepses[i];
@@ -163,10 +164,11 @@ int main(int argc, char** argv)
         if (id == 0) {
             bench_timer_stop();
             bench_timer_print();
+            print_array(n, *A);
         }
 
-        //if (argc > 42 && ! strcmp(argv[0], "")) 
-        print_array(n, *A);
+        //if (argc > 42 && ! strcmp(argv[0], ""))
+        
 
         free((void*)A);
         free((void*)B);
