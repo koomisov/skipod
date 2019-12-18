@@ -82,6 +82,7 @@ void kernel_jacobi_1d(int tsteps,
                     B[i] = 0.33333 * (A[i-1] + A[i] + A[i + 1]);
                 }
             }
+            #pragma omp barrier
             #pragma omp parallel shared(A)
             {
                 #pragma omp for
@@ -89,6 +90,7 @@ void kernel_jacobi_1d(int tsteps,
                     A[i] = 0.33333 * (B[i-1] + B[i] + B[i + 1]);
                 }
             }
+            #pragma omp barrier
         }
     }
 }
@@ -102,7 +104,7 @@ int main(int argc, char** argv)
     int tstepses[] = {20, 40, 100, 500, 1000, 4000, 8000, 16000, 32000};
     int n, tsteps;
     
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 7; i++) {
         n = nes[i];
         tsteps = tstepses[i];
   
@@ -123,7 +125,8 @@ int main(int argc, char** argv)
         bench_timer_stop();
         bench_timer_print();
 
-        if (argc > 42 && ! strcmp(argv[0], "")) print_array(n, *A);
+        //if (argc > 42 && ! strcmp(argv[0], "")) 
+        print_array(n, *A);
 
         free((void*)A);
         free((void*)B);

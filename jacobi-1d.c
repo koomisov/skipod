@@ -108,7 +108,7 @@ int main(int argc, char** argv)
         bench_timer_stop();
         bench_timer_print();
 
-        if (argc > 42 && ! strcmp(argv[0], "")) print_array(n, *A);
+        print_array(n, *A);
 
         free((void*)A);
         free((void*)B);
