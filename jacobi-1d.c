@@ -87,7 +87,7 @@ int main(int argc, char** argv)
     int tstepses[] = {20, 40, 100, 500, 1000, 4000, 8000, 16000, 32000};
     int n, tsteps;
     
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 7; i++) {
         n = nes[i];
         tsteps = tstepses[i];
   
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
         bench_timer_stop();
         bench_timer_print();
 
-        if (argc > 42 && ! strcmp(argv[0], "")) print_array(n, *A);
+        print_array(n, *A);
 
         free((void*)A);
         free((void*)B);

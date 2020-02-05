@@ -75,20 +75,22 @@ void kernel_jacobi_1d(int tsteps,
 
     {
         for (t = 0; t < tsteps; t++) {
-            #pragma omp parallel shared(B)
+            #pragma omp parallel shared(B) private(i)
             {
                 #pragma omp for
                 for (i = 1; i < n - 1; i++) {
                     B[i] = 0.33333 * (A[i-1] + A[i] + A[i + 1]);
                 }
             }
-            #pragma omp parallel shared(A)
+            #pragma omp barrier
+            #pragma omp parallel shared(A) private(i)
             {
                 #pragma omp for
                 for (i = 1; i < n - 1; i++) {
                     A[i] = 0.33333 * (B[i-1] + B[i] + B[i + 1]);
                 }
             }
+            #pragma omp barrier
         }
     }
 }
@@ -96,37 +98,42 @@ void kernel_jacobi_1d(int tsteps,
 
 int main(int argc, char** argv)
 {
-    omp_set_num_threads(omp_get_num_procs());
-    printf("%d\n", omp_get_num_procs());
+    int procs = omp_get_num_threads();
+    printf("%d\n", procs);
     int nes[] =      {30, 120, 400, 2000, 4000, 16000, 32000, 64000, 128000};
     int tstepses[] = {20, 40, 100, 500, 1000, 4000, 8000, 16000, 32000};
     int n, tsteps;
-    
-    for (int i = 0; i < 9; i++) {
-        n = nes[i];
-        tsteps = tstepses[i];
+    int i;
+    int k = 1;
+    while (k < procs) {
+        printf("%d\n", k);
+        omp_set_num_threads(k);
+        for (i = 0; i < 9; i++) {
+            n = nes[i];
+            tsteps = tstepses[i];
   
-        float (*A)[n];
-        A = (float(*)[n]) malloc((n) * sizeof(float));
+            float (*A)[n];
+            A = (float(*)[n]) malloc((n) * sizeof(float));
   
-        float (*B)[n]; 
-        B = (float(*)[n]) malloc ((n) * sizeof(float));
+            float (*B)[n]; 
+            B = (float(*)[n]) malloc ((n) * sizeof(float));
 
-        init_array(n, *A, *B);
+            init_array(n, *A, *B);
 
-        bench_timer_start();
+            bench_timer_start();
   
-        printf("%d, %d\n", n, tsteps);
-        //print_array(n, A);
-        kernel_jacobi_1d(tsteps, n, *A, *B);
+            printf("%d, %d\n", n, tsteps);
+            kernel_jacobi_1d(tsteps, n, *A, *B);
 
-        bench_timer_stop();
-        bench_timer_print();
+            bench_timer_stop();
+            bench_timer_print();
 
-        if (argc > 42 && ! strcmp(argv[0], "")) print_array(n, *A);
+            print_array(n, *A);
 
-        free((void*)A);
-        free((void*)B);
+            free((void*)A);
+            free((void*)B);
+            k *= 2;
+        }
     }
     return 0;
 }
